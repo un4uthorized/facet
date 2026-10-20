@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Documentação OpenAPI interativa com console para testar requests." />
+    <meta name="theme-color" content="#000000" />
+    <title>Facet — API Reference</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="Facet — início">
+        <span class="brand__mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>FACET</span>
+      </a>
+      <div class="api-switcher">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="api-name">Orbit API</span>
+        <span class="version" id="api-version">v1.0.0</span>
+        <button class="icon-button api-switcher__chevron" id="open-import" aria-label="Importar outra especificação" title="Importar OpenAPI">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>
+        </button>
+      </div>
+      <button class="search-trigger" id="open-search" type="button">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2"/><path d="m10.2 10.2 3 3"/></svg>
+        <span>Buscar endpoints</span><kbd>⌘ K</kbd>
+      </button>
+      <div class="topbar__actions">
+        <button class="button button--ghost" id="download-spec" type="button">Exportar</button>
+        <button class="button button--outline" id="open-import-secondary" type="button">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V2m0 0L5 5m3-3 3 3M3 9v4h10V9"/></svg>
+          OpenAPI
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__scroll">
+        <nav id="navigation" aria-label="Navegação da API"></nav>
+      </div>
+      <div class="sidebar__footer">
+        <span><i></i> OpenAPI <b id="openapi-version">3.1.0</b></span>
+        <button class="icon-button" id="collapse-sidebar" aria-label="Recolher navegação" title="Recolher navegação">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m10 3-5 5 5 5"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <main class="reference" id="reference"></main>
+
+    <aside class="console" id="console" aria-label="Console de request">
+      <div class="console__header">
+        <div>
+          <span class="eyebrow">PLAYGROUND</span>
+          <h2>Testar request</h2>
+        </div>
+        <span class="environment"><i></i> Sandbox</span>
+        <button class="icon-button close-console" id="close-console" type="button" aria-label="Fechar console"><svg viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></svg></button>
+      </div>
+      <div class="console__scroll">
+        <section class="request-builder">
+          <label class="field-label" for="server-select">Servidor</label>
+          <div class="select-wrap"><select id="server-select"></select><svg viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg></div>
+
+          <div class="request-url">
+            <span class="method method--get" id="request-method">GET</span>
+            <input id="request-url" aria-label="URL da request" spellcheck="false" />
+            <button class="icon-button" id="copy-url" aria-label="Copiar URL" title="Copiar URL">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.8A1.8 1.8 0 0 0 9.2 2H3.8A1.8 1.8 0 0 0 2 3.8v5.4A1.8 1.8 0 0 0 3.8 11H5"/></svg>
+            </button>
+          </div>
+
+          <div class="auth-row" id="auth-row">
+            <span class="auth-row__icon"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5.3a2.5 2.5 0 0 1 5 0V7"/></svg></span>
+            <label><span>Bearer token</span><input id="auth-token" type="password" placeholder="Cole seu token" autocomplete="off" /></label>
+            <button class="icon-button" id="toggle-token" aria-label="Mostrar token" title="Mostrar token">
+              <svg viewBox="0 0 16 16"><path d="M1.5 8s2.2-3.5 6.5-3.5S14.5 8 14.5 8 12.3 11.5 8 11.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="1.7"/></svg>
+            </button>
+          </div>
+
+          <div class="tabs" role="tablist">
+            <button class="tab is-active" data-request-tab="params" role="tab">Parâmetros <span id="param-count">0</span></button>
+            <button class="tab" data-request-tab="body" role="tab">Body</button>
+            <button class="tab" data-request-tab="headers" role="tab">Headers</button>
+          </div>
+          <div class="tab-panel" id="params-panel"></div>
+          <div class="tab-panel" id="body-panel" hidden>
+            <div class="editor-header"><span>application/json</span><button id="format-json" type="button">Formatar</button></div>
+            <textarea class="code-editor" id="request-body" spellcheck="false"></textarea>
+          </div>
+          <div class="tab-panel" id="headers-panel" hidden>
+            <div id="header-list"></div>
+            <button class="add-row" id="add-header" type="button"><span>+</span> Adicionar header</button>
+          </div>
+
+          <button class="send-button" id="send-request" type="button"><span>Enviar request</span><kbd>⌘ ↵</kbd></button>
+          <p class="cors-note">A chamada sai do seu navegador. A API precisa permitir CORS.</p>
+        </section>
+
+        <section class="response-panel" id="response-panel">
+          <div class="response-panel__head">
+            <span class="eyebrow">RESPONSE</span>
+            <div class="response-meta" id="response-meta"><span class="status-code">—</span><span>—</span><span>—</span></div>
+          </div>
+          <div class="response-empty" id="response-empty">
+            <span><svg viewBox="0 0 24 24"><path d="m8 9-3 3 3 3m8-6 3 3-3 3m-5.5 3L13.5 6"/></svg></span>
+            <strong>Aguardando request</strong>
+            <p>A resposta aparecerá aqui.</p>
+          </div>
+          <div class="response-result" id="response-result" hidden>
+            <div class="editor-header"><span id="response-type">application/json</span><button id="copy-response" type="button">Copiar</button></div>
+            <pre><code id="response-code"></code></pre>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <button class="mobile-console-toggle" id="mobile-console-toggle" type="button"><span>Testar endpoint</span><kbd>⌘ ↵</kbd></button>
+
+    <dialog class="modal" id="import-dialog">
+      <form method="dialog" class="modal__card" id="import-form">
+        <header><div><span class="eyebrow">OPENAPI</span><h2>Importar especificação</h2></div><button class="icon-button" value="cancel" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></svg></button></header>
+        <div class="import-tabs"><button class="is-active" type="button" data-import-tab="url">URL</button><button type="button" data-import-tab="file">Arquivo</button><button type="button" data-import-tab="paste">Colar</button></div>
+        <section class="import-panel" data-import-panel="url">
+          <label class="input-label">URL da especificação<input id="spec-url" type="url" placeholder="https://api.exemplo.com/openapi.json" /></label>
+          <p>JSON ou YAML. O servidor de origem precisa permitir CORS.</p>
+        </section>
+        <section class="import-panel" data-import-panel="file" hidden>
+          <label class="dropzone" id="dropzone"><input id="spec-file" type="file" accept=".json,.yaml,.yml,application/json,application/yaml,text/yaml" /><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5"/></svg><strong>Selecione ou arraste um arquivo</strong><span>.json, .yaml ou .yml</span></label>
+        </section>
+        <section class="import-panel" data-import-panel="paste" hidden>
+          <label class="input-label">JSON ou YAML<textarea id="spec-paste" placeholder="openapi: 3.1.0&#10;info:&#10;  title: Minha API"></textarea></label>
+        </section>
+        <p class="form-error" id="import-error" role="alert"></p>
+        <footer><button class="button button--ghost" value="cancel">Cancelar</button><button class="button button--solid" id="load-spec" type="button">Carregar documentação</button></footer>
+      </form>
+    </dialog>
+
+    <dialog class="modal search-modal" id="search-dialog">
+      <div class="modal__card">
+        <div class="search-input-wrap"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2"/><path d="m10.2 10.2 3 3"/></svg><input id="search-input" placeholder="Buscar endpoint, path ou tag…" autocomplete="off" /><kbd>Esc</kbd></div>
+        <div id="search-results" class="search-results"></div>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"><i></i><span></span></div>
+    <script src="./vendor/js-yaml.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

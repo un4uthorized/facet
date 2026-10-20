@@ -1,0 +1,55 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Orbit API",
+    "version": "1.0.0",
+    "description": "Uma API enxuta para organizar projetos, tarefas e a atividade da sua equipe em um único lugar."
+  },
+  "servers": [
+    { "url": "https://jsonplaceholder.typicode.com", "description": "Sandbox" },
+    { "url": "https://api.orbit.example/v1", "description": "Production" }
+  ],
+  "tags": [
+    { "name": "Projects", "description": "Crie e acompanhe os projetos do seu workspace." },
+    { "name": "Tasks", "description": "Organize o trabalho em unidades pequenas e acionáveis." },
+    { "name": "Activity", "description": "Consulte eventos recentes do workspace." }
+  ],
+  "paths": {
+    "/posts": {
+      "get": {
+        "tags": ["Projects"], "summary": "Listar projetos", "description": "Retorna todos os projetos visíveis para o token atual.", "operationId": "listProjects",
+        "parameters": [
+          { "name": "_limit", "in": "query", "description": "Máximo de projetos retornados.", "schema": { "type": "integer", "default": 6 } },
+          { "name": "_page", "in": "query", "description": "Página da coleção.", "schema": { "type": "integer", "default": 1 } }
+        ],
+        "responses": { "200": { "description": "Lista de projetos." }, "401": { "description": "Token ausente ou inválido." } }
+      },
+      "post": {
+        "tags": ["Projects"], "summary": "Criar projeto", "description": "Cria um projeto e retorna o recurso persistido.", "operationId": "createProject",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["title"], "properties": { "title": { "type": "string", "example": "Website refresh" }, "body": { "type": "string", "example": "Ship the new experience" }, "userId": { "type": "integer", "example": 1 } } } } } },
+        "responses": { "201": { "description": "Projeto criado." }, "422": { "description": "Dados inválidos." } }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "tags": ["Projects"], "summary": "Obter projeto", "description": "Retorna um projeto pelo identificador.", "operationId": "getProject",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "description": "ID do projeto.", "schema": { "type": "integer", "example": 1 } }],
+        "responses": { "200": { "description": "Detalhes do projeto." }, "404": { "description": "Projeto não encontrado." } }
+      },
+      "patch": {
+        "tags": ["Projects"], "summary": "Atualizar projeto", "description": "Atualiza parcialmente um projeto existente.", "operationId": "updateProject",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "example": 1 } }],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "title": { "type": "string", "example": "Website refresh — Q4" } } } } } },
+        "responses": { "200": { "description": "Projeto atualizado." }, "404": { "description": "Projeto não encontrado." } }
+      },
+      "delete": { "tags": ["Projects"], "summary": "Remover projeto", "description": "Remove permanentemente um projeto.", "operationId": "deleteProject", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "example": 1 } }], "responses": { "200": { "description": "Projeto removido." } } }
+    },
+    "/todos": {
+      "get": { "tags": ["Tasks"], "summary": "Listar tarefas", "description": "Retorna tarefas do workspace.", "operationId": "listTasks", "parameters": [{ "name": "_limit", "in": "query", "schema": { "type": "integer", "default": 8 } }, { "name": "completed", "in": "query", "schema": { "type": "boolean" } }], "responses": { "200": { "description": "Lista de tarefas." } } },
+      "post": { "tags": ["Tasks"], "summary": "Criar tarefa", "description": "Cria uma tarefa vinculada a um projeto.", "operationId": "createTask", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "title": { "type": "string", "example": "Review API docs" }, "completed": { "type": "boolean", "example": false }, "userId": { "type": "integer", "example": 1 } } } } } }, "responses": { "201": { "description": "Tarefa criada." } } }
+    },
+    "/comments": { "get": { "tags": ["Activity"], "summary": "Listar atividade", "description": "Retorna a atividade mais recente.", "operationId": "listActivity", "parameters": [{ "name": "_limit", "in": "query", "schema": { "type": "integer", "default": 5 } }], "responses": { "200": { "description": "Feed de atividade." } } } }
+  },
+  "components": { "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } } },
+  "security": [{ "bearerAuth": [] }]
+}
