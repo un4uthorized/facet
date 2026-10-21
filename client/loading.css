@@ -1,0 +1,21 @@
+.page-loading { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: hidden; background: var(--canvas); opacity: 0; visibility: hidden; pointer-events: none; filter: blur(7px); transition: opacity .32s ease, filter .32s ease, visibility 0s .32s; }
+.page-loading.is-active { opacity: 1; visibility: visible; pointer-events: auto; filter: blur(0); transition: opacity .2s ease, filter .2s ease, visibility 0s; }
+.page-loading__skeleton { position: absolute; inset: 0; display: grid; grid-template-columns: 220px 1fr; opacity: .55; filter: blur(5px); }
+.page-loading__sidebar { padding: 40px 26px; border-right: 1px solid var(--border); }
+.page-loading__skeleton i { display: block; height: 11px; max-width: 100%; border-radius: 5px; background: var(--control-active); }
+.page-loading__sidebar i:first-child { height: 30px; width: 85px; margin-bottom: 60px; }
+.page-loading__sidebar i + i { width: 110px; margin-top: 25px; }
+.page-loading__sidebar i:nth-child(3) { width: 80px; }
+.page-loading__content { padding: 100px 7vw; }
+.page-loading__content > i:first-child { width: 38%; height: 26px; margin-bottom: 26px; }
+.page-loading__content > i { width: 65%; margin-bottom: 17px; }
+.page-loading__content > i:nth-child(3) { width: 48%; }
+.page-loading__content > div { margin-top: 75px; padding: 25px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.page-loading__content > div i { width: 55%; margin: 20px 0; }
+.page-loading__label { position: relative; display: flex; gap: 10px; align-items: center; padding: 12px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--canvas); box-shadow: 0 4px 20px rgb(0 0 0 / 3%); color: var(--muted); font-size: 12px; }
+.page-loading__label > span { width: 13px; height: 13px; border: 1.5px solid var(--border-strong); border-top-color: var(--foreground); border-radius: 50%; animation: page-loading-spin .8s linear infinite; }
+.docs-stage { opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.docs-stage.is-ready { opacity: 1; pointer-events: auto; }
+@keyframes page-loading-spin { to { rotate: 360deg; } }
+@media (max-width: 640px) { .page-loading__skeleton { grid-template-columns: 1fr; } .page-loading__sidebar { display: none; } .page-loading__content { padding: 85px 30px; } .page-loading__content > i { width: 85%; } }
+@media (prefers-reduced-motion: reduce) { .page-loading, .page-loading.is-active, .docs-stage { transition: none !important; filter: none; } .page-loading__label > span, .app-page-enter { animation: none !important; } .page-loading__skeleton { filter: none; opacity: .35; } }

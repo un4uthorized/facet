@@ -1,0 +1,172 @@
+
+    <header class="topbar">
+      <div class="topbar__actions"><div id="account-controls"></div>
+        <button class="icon-button theme-toggle" id="theme-toggle" type="button" aria-label="Ativar dark mode" title="Alternar tema">
+          <svg class="sun-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1.1 1.1M11.9 11.9 13 13M13 3l-1.1 1.1M4.1 11.9 3 13"/></svg>
+          <svg class="moon-icon" viewBox="0 0 16 16"><path d="M13.5 10.2A6 6 0 0 1 5.8 2.5a6 6 0 1 0 7.7 7.7Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#overview" aria-label="Documentação da API — início">
+        <span></span>
+      </a>
+      <div class="sidebar__scroll">
+        <nav id="navigation" aria-label="Navegação da API"></nav>
+      </div>
+      <div class="sidebar__footer">
+        <div class="sidebar-credit">
+          <span>OpenAPI <b id="openapi-version">3.1.0</b></span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="reference" id="reference"><div id="reference-content"></div>
+    </main>
+
+    <aside class="console" id="console" aria-label="Console de request">
+      <div class="console-resizer" id="console-resizer" role="separator" aria-label="Redimensionar painel direito" aria-orientation="vertical" aria-controls="console" tabindex="0"></div>
+      <div class="console__header">
+        <div class="console-mode-tabs" role="tablist" aria-label="Painel lateral">
+          <button type="button" data-console-mode="explorer" role="tab" aria-selected="false" aria-controls="explorer-panel" id="console-tab-explorer" tabindex="-1"><i data-lucide="square-terminal" aria-hidden="true"></i><span>API Explorer</span></button>
+          <button class="is-active" type="button" data-console-mode="examples" role="tab" aria-selected="true" aria-controls="examples-panel" id="console-tab-examples" tabindex="0"><i data-lucide="code-2" aria-hidden="true"></i><span>Examples</span></button>
+        </div>
+        <button class="icon-button close-console" id="close-console" type="button" aria-label="Fechar console"><svg viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></svg></button>
+      </div>
+      <div class="console__scroll">
+        <section class="examples-panel" id="examples-panel" role="tabpanel" aria-labelledby="console-tab-examples">
+          <article class="example-card">
+            <header><span><b id="example-method" class="method method--get">GET</b><code id="example-path">/posts</code></span><div><label class="example-language-picker"><select id="example-language" aria-label="Linguagem ou ferramenta do exemplo"><option value="curl">cURL</option></select><i data-lucide="chevron-down" aria-hidden="true"></i></label><button class="icon-button has-editor-tooltip" type="button" data-copy-example="curl" aria-label="Copiar exemplo de request" aria-describedby="tooltip-example-curl"><i data-lucide="copy" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-example-curl" role="tooltip">Copiar exemplo de request</span></button></div></header>
+            <pre tabindex="0" aria-label="Exemplo cURL"><code id="curl-example"></code></pre>
+          </article>
+          <article class="example-card" id="request-example-card">
+            <header><strong>Request example</strong><button class="icon-button has-editor-tooltip" type="button" data-copy-example="request" aria-label="Copiar exemplo de request" aria-describedby="tooltip-example-request"><i data-lucide="copy" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-example-request" role="tooltip">Copiar exemplo de request</span></button></header>
+            <pre tabindex="0" aria-label="Exemplo de request"><code id="request-example"></code></pre>
+          </article>
+          <article class="example-card">
+            <header><strong>Response example</strong><div><span class="response-card-status" id="response-example-status"></span><button class="icon-button has-editor-tooltip" type="button" data-copy-example="response" aria-label="Copiar exemplo de resposta" aria-describedby="tooltip-example-response"><i data-lucide="copy" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-example-response" role="tooltip">Copiar exemplo de resposta</span></button></div></header>
+            <pre tabindex="0" aria-label="Exemplo de resposta"><code id="response-example"></code></pre>
+          </article>
+        </section>
+        <div class="explorer-panel" id="explorer-panel" role="tabpanel" aria-labelledby="console-tab-explorer" hidden>
+    <section class="connection-page" id="connection-page" aria-label="Configuração da request">
+      <form class="connection-form" id="connection-form">
+        <div class="connection-fields">
+          <section class="connection-section connection-server" aria-labelledby="connection-server-title">
+            <header><label id="connection-server-title" for="connection-base-url">Servidor</label><span>Base URL</span></header>
+            <div class="server-picker" id="server-picker"><div class="server-picker__field"><input class="connection-url" id="connection-base-url" type="url" placeholder="https://api.exemplo.com/v1" autocomplete="off" spellcheck="false" required /><button class="icon-button" id="server-picker-toggle" type="button" aria-label="Escolher servidor" aria-haspopup="menu" aria-expanded="false" aria-controls="connection-servers"><i data-lucide="chevron-down" aria-hidden="true"></i></button></div><div class="server-options" id="connection-servers" role="menu" aria-label="Servidores disponíveis" hidden></div></div>
+          </section>
+          <section class="connection-section" aria-labelledby="connection-auth-title">
+            <header><h3 id="connection-auth-title">Autenticação</h3><span id="connection-auth-status">Opcional</span></header><label class="connection-auth-select"><span>Tipo</span><select id="connection-auth-mode" aria-label="Tipo de autenticação"><option value="bearer">Bearer token</option><option value="headers">Header / API key</option></select><i data-lucide="chevron-down" aria-hidden="true"></i></label>
+            <div class="connection-secret" id="connection-bearer-row"><label for="connection-token">Token</label><div class="connection-secret__field"><input id="connection-token" type="password" placeholder="Cole seu token" autocomplete="off" spellcheck="false" /><button class="icon-button" id="connection-clear-token" type="button" aria-label="Limpar token" title="Limpar token"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button><button class="icon-button" id="connection-toggle-token" type="button" aria-label="Mostrar token" aria-pressed="false"><i data-lucide="eye" aria-hidden="true"></i></button></div></div>
+            <p class="connection-auth-note" id="connection-auth-note" hidden>Adicione sua API key ou o header Authorization na seção Headers.</p>
+          </section>
+          <section class="connection-section" aria-labelledby="connection-headers-title">
+            <header><h3 id="connection-headers-title">Headers</h3><button id="connection-add-header" type="button"><i data-lucide="plus" aria-hidden="true"></i>Adicionar header</button></header>
+            <div id="connection-headers"></div>
+            <p class="connection-headers-empty">Nenhum header personalizado.</p>
+          </section>
+          <p class="connection-hint">Ajustes em tempo real, apenas nesta sessão.</p>
+        </div>
+        <p class="form-error" id="connection-error" role="alert" tabindex="-1"></p>
+      </form>
+    </section>
+        <section class="request-builder" aria-labelledby="request-builder-title">
+          <h2 class="explorer-section-title" id="request-builder-title">Request</h2>
+          <select id="server-select" aria-label="Servidor aplicado" hidden></select>
+
+          <div class="request-url">
+            <span class="method method--get" id="request-method">GET</span>
+            <input id="request-url" aria-label="URL da request" spellcheck="false" />
+            <button class="icon-button" id="copy-url" aria-label="Copiar URL" title="Copiar URL">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.8A1.8 1.8 0 0 0 9.2 2H3.8A1.8 1.8 0 0 0 2 3.8v5.4A1.8 1.8 0 0 0 3.8 11H5"/></svg>
+            </button>
+          </div>
+
+          <div class="auth-row" id="auth-row" hidden>
+            <span class="auth-row__icon"><svg viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7" rx="2"/><path d="M5.5 7V5.3a2.5 2.5 0 0 1 5 0V7"/></svg></span>
+            <label><span>Bearer token</span><input id="auth-token" type="password" placeholder="Cole seu token" autocomplete="off" /></label>
+            <button class="icon-button" id="toggle-token" aria-label="Mostrar token" title="Mostrar token">
+              <svg viewBox="0 0 16 16"><path d="M1.5 8s2.2-3.5 6.5-3.5S14.5 8 14.5 8 12.3 11.5 8 11.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="1.7"/></svg>
+            </button>
+          </div>
+
+          <div class="tabs" id="request-tabs" role="tablist" aria-label="Dados da request">
+            <button class="tab is-active" data-request-tab="params" role="tab" id="request-tab-params" aria-selected="true" aria-controls="params-panel" tabindex="0">Parâmetros <span id="param-count">0</span></button>
+            <button class="tab" data-request-tab="body" role="tab" id="request-tab-body" aria-selected="false" aria-controls="body-panel" tabindex="-1">Body</button>
+          </div>
+          <div class="tab-panel" id="params-panel" role="tabpanel" aria-labelledby="request-tab-params"></div>
+          <div class="tab-panel" id="body-panel" role="tabpanel" aria-labelledby="request-tab-body" hidden>
+            <div class="editor-header"><span>application/json</span><div class="body-editor-actions"><button class="icon-button has-editor-tooltip" id="copy-request-body" type="button" aria-describedby="tooltip-copy-request-body" aria-label="Copiar Body"><i data-lucide="copy" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-copy-request-body" role="tooltip">Copiar Body</span></button><button class="icon-button has-editor-tooltip" id="format-json" type="button" aria-describedby="tooltip-format-json" aria-label="Formatar JSON"><i data-lucide="list-tree" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-format-json" role="tooltip">Formatar JSON · Alt + Shift + F</span></button></div></div>
+            <div class="body-code-editor" id="body-code-editor">
+              <div class="body-editor-lines" id="body-editor-lines" aria-hidden="true"></div>
+              <div class="body-editor-viewport">
+                <pre class="body-editor-highlight" id="body-editor-highlight" aria-hidden="true"><code id="body-editor-code"></code></pre>
+                <textarea class="code-editor" id="request-body" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Body da request" aria-describedby="request-body-error body-editor-help"></textarea>
+              </div>
+            </div>
+            <div class="body-editor-footer"><span id="body-editor-status">JSON</span><span id="body-editor-help" hidden>Tab: recuo · Esc, Tab: sair</span><span id="body-editor-position">Ln 1, Col 1</span></div>
+            <p class="explorer-error" id="request-body-error" role="alert" tabindex="-1"></p>
+          </div>
+          <div class="tab-panel" id="headers-panel" hidden>
+            <div id="header-list"></div>
+            <button class="add-row" id="add-header" type="button"><span>+</span> Adicionar header</button>
+          </div>
+
+          <div class="request-actions">
+            <button class="send-button" id="send-request" type="button"><i data-lucide="play" aria-hidden="true"></i><span>Enviar request</span><kbd>⌘ ↵</kbd></button>
+          </div>
+        </section>
+
+        <section class="response-panel" id="response-panel" aria-labelledby="explorer-response-title" aria-busy="false" hidden>
+          <div class="response-panel__head">
+            <h2 class="explorer-section-title" id="explorer-response-title">Resposta</h2>
+            <div class="response-meta" id="response-meta" role="status" aria-live="polite"></div>
+          </div>
+          <div class="response-result" id="response-result" hidden>
+            <div class="editor-header"><span id="response-type">application/json</span><button class="icon-button has-editor-tooltip" id="copy-response" type="button" aria-describedby="tooltip-copy-response" aria-label="Copiar resposta"><i data-lucide="copy" aria-hidden="true"></i><span class="editor-tooltip" id="tooltip-copy-response" role="tooltip">Copiar resposta</span></button></div>
+            <pre tabindex="0" aria-label="Body da resposta"><code id="response-code"></code></pre>
+          </div>
+          <div class="response-network-error" id="response-network-error" role="alert" hidden>
+            <div class="response-network-error__heading"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10" cy="10" r="7.5" /><path d="M10 6v5m0 2v1" /></svg><strong>Não foi possível obter uma resposta</strong></div>
+            <p>O navegador não conseguiu concluir a requisição. Confira a URL, sua conexão e as permissões de acesso da API (CORS).</p>
+            <details><summary>Detalhes técnicos</summary><code id="response-network-detail"></code></details>
+          </div>
+        </section>
+        </div>
+      </div>
+    </aside>
+
+    <button class="mobile-console-toggle" id="mobile-console-toggle" type="button"><span>API Explorer</span><kbd>⌘ ↵</kbd></button>
+
+
+
+    <dialog class="modal" id="import-dialog">
+      <form method="dialog" class="modal__card" id="import-form">
+        <header><div><span class="eyebrow">OPENAPI</span><h2>Importar especificação</h2></div><button class="icon-button" value="cancel" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="m3 3 10 10M13 3 3 13"/></svg></button></header>
+        <div class="import-tabs"><button class="is-active" type="button" data-import-tab="url">URL</button><button type="button" data-import-tab="file">Arquivo</button><button type="button" data-import-tab="paste">Colar</button></div>
+        <section class="import-panel" data-import-panel="url">
+          <label class="input-label">URL da especificação<input id="spec-url" type="url" placeholder="https://api.exemplo.com/openapi.json" /></label>
+          <p>JSON ou YAML. O servidor de origem precisa permitir CORS.</p>
+        </section>
+        <section class="import-panel" data-import-panel="file" hidden>
+          <label class="dropzone" id="dropzone"><input id="spec-file" type="file" accept=".json,.yaml,.yml,application/json,application/yaml,text/yaml" /><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5"/></svg><strong>Selecione ou arraste um arquivo</strong><span>.json, .yaml ou .yml</span></label>
+        </section>
+        <section class="import-panel" data-import-panel="paste" hidden>
+          <label class="input-label">JSON ou YAML<textarea id="spec-paste" placeholder="openapi: 3.1.0&#10;info:&#10;  title: Minha API"></textarea></label>
+        </section>
+        <p class="form-error" id="import-error" role="alert"></p>
+        <footer><button class="button button--ghost" value="cancel">Cancelar</button><button class="button button--solid" id="load-spec" type="button">Carregar documentação</button></footer>
+      </form>
+    </dialog>
+
+    <dialog class="modal search-modal" id="search-dialog" aria-label="Buscar na documentação">
+      <div class="modal__card">
+        <div class="search-input-wrap"><span class="search-input-icon"><i data-lucide="search" aria-hidden="true"></i></span><input id="search-input" type="search" aria-label="Buscar guia, endpoint ou schema" placeholder="Buscar guia, endpoint ou schema…" autocomplete="off" /><button class="search-close" id="search-close" type="button" aria-label="Fechar busca"><i data-lucide="x" aria-hidden="true"></i></button></div>
+        <div id="search-results" class="search-results"></div>
+        <footer class="search-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navegar <kbd>↵</kbd> abrir</span><span><kbd>esc</kbd> fechar</span></footer>
+      </div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"><i></i><span></span></div>

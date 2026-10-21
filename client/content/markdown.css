@@ -1,0 +1,54 @@
+.cms-markdown { color: var(--muted); font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
+.cms-markdown > :first-child { margin-top: 0; }
+.cms-markdown > :last-child { margin-bottom: 0; }
+.cms-markdown :is(h1, h2, h3, h4, h5, h6) { color: var(--foreground); line-height: 1.4; letter-spacing: -.025em; font-weight: 500; margin: 36px 0 14px; scroll-margin-top: 28px; }
+.cms-markdown h1 { font-size: 30px; font-weight: 400; }
+.cms-markdown h2 { font-size: 21px; }
+.cms-markdown h3 { font-size: 17px; }
+.cms-markdown :is(h4, h5, h6) { font-size: 14px; letter-spacing: 0; }
+.cms-markdown p { margin: 0 0 18px; font-size: inherit; line-height: inherit; }
+.cms-markdown strong { color: var(--foreground); font-weight: 500; }
+.cms-markdown a { color: var(--foreground); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 4px; transition: text-decoration-color .15s; }
+.cms-markdown a:hover { text-decoration-color: currentColor; }
+.cms-markdown :is(ul, ol) { padding-left: 22px; margin: 16px 0 24px; }
+.cms-markdown li { padding-left: 4px; margin: 7px 0; }
+.cms-markdown ul > li::marker { color: var(--subtle); font-size: .75em; }
+.cms-markdown ol > li::marker { color: var(--foreground); font-family: var(--mono); font-size: 11px; }
+.cms-markdown li > p { margin-bottom: 8px; }
+.cms-markdown li > :is(ul, ol) { margin: 8px 0 12px; }
+.cms-markdown blockquote { position: relative; margin: 24px 0; padding: 16px 20px; border: 1px solid var(--border); border-left: 2px solid var(--border-strong); border-radius: 0 6px 6px 0; background: var(--surface); color: var(--muted); font-size: 13px; line-height: 1.8; }
+.cms-markdown blockquote > :first-child { margin-top: 0; }
+.cms-markdown blockquote > :last-child { margin-bottom: 0; }
+.cms-markdown :not(pre) > code { display: inline; padding: 2px 5px; border: 1px solid var(--border); border-radius: 4px; background: var(--control); color: var(--foreground); font-family: var(--mono); font-size: .82em; font-weight: 400; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.cms-markdown pre { max-width: 100%; margin: 24px 0; padding: 16px 18px; border: 1px solid var(--control-border); border-radius: 6px; overflow-x: auto; background: var(--code-bg); color: var(--foreground); line-height: 1.8; tab-size: 2; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.cms-markdown pre code { display: block; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; font-family: var(--mono); font-size: 12px; font-weight: 400; line-height: 20px; white-space: pre; overflow-wrap: normal; word-break: normal; }
+.cms-code-block { margin: 24px 0; border: 1px solid var(--control-border); border-radius: 6px; overflow: hidden; background: var(--code-bg); }
+.cms-code-block > figcaption { display: flex; min-height: 37px; align-items: center; padding: 0 13px; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 11px; line-height: 1.5; }
+.cms-code-block > figcaption > span { display: inline-flex; align-items: center; gap: 8px; }
+.cms-code-block > figcaption svg { width: 13px; height: 13px; color: var(--subtle); }
+.cms-markdown .cms-code-block > pre { margin: 0; border: 0; border-radius: 0; }
+.cms-table-scroll { width: 100%; margin: 24px 0; overflow-x: auto; border: 1px solid var(--control-border); border-radius: 6px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.cms-table-scroll:focus-visible { outline: 2px solid var(--border-strong); outline-offset: 3px; }
+.cms-markdown table { display: table; width: 100%; margin: 0; border-collapse: collapse; font-size: 13px; line-height: 1.7; }
+.cms-markdown :is(th, td) { padding: 13px 16px; border: 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.cms-markdown th { padding-top: 10px; padding-bottom: 10px; background: var(--surface); color: var(--muted); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.cms-markdown td { color: var(--muted); min-width: 90px; }
+.cms-markdown td:first-child { color: var(--foreground); font-weight: 500; }
+.cms-markdown tr:last-child > td { border-bottom: 0; }
+.cms-markdown tbody tr { transition: background .15s; }
+.cms-markdown tbody tr:hover { background: var(--surface); }
+.cms-markdown :is(th, td) > :last-child { margin-bottom: 0; }
+.cms-markdown img { display: block; max-width: 100%; height: auto; margin: 24px 0; border: 1px solid var(--border); border-radius: 6px; }
+.cms-markdown hr { border: 0; border-top: 1px solid var(--border); margin: 36px 0; }
+@media (max-width: 600px) {
+  .cms-markdown { font-size: 13px; }
+  .cms-markdown h1 { font-size: 26px; }
+  .cms-markdown h2 { font-size: 19px; }
+  .cms-markdown :is(th, td) { padding: 11px 13px; }
+  .cms-markdown th { font-size: 10px; }
+  .cms-markdown table { font-size: 12px; }
+  .cms-markdown blockquote { padding: 14px 16px; }
+  .cms-markdown pre { padding: 14px; }
+  .cms-markdown pre code { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .cms-markdown a, .cms-markdown tbody tr { transition: none; } }
