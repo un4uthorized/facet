@@ -1,0 +1,420 @@
+import { apiLogin, submitLogin, submitInvitation, completeSecondFactor } from './auth-helpers';
+import { expect, test } from '@playwright/test';
+
+const adminEmail = 'admin@facet.test';
+const adminPassword = 'browser-admin-password';
+const userEmail = 'reader@facet.test';
+const userPassword = 'browser-reader-password';
+
+test('admin creates and revokes reader access; documentation keeps the Explorer behavior', async ({ page, browser, baseURL }, testInfo) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/docs');
+  await expect(page).toHaveURL(/\/login$/);
+  await page.screenshot({ path: testInfo.outputPath('login.png') });
+  await page.getByLabel('E-mail', { exact: true }).fill(adminEmail);
+  await page.getByLabel('Senha', { exact: true }).fill('incorrect-password');
+  await submitLogin(page);
+  await expect(page.getByRole('alert')).toContainText('E-mail ou senha');
+  await page.getByLabel('Senha', { exact: true }).fill(adminPassword);
+  await submitLogin(page);
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole('heading', { name: 'Usuários', exact: true })).toBeVisible();
+  const adminRow = page.getByRole('row').filter({ hasText: adminEmail });
+  await expect(adminRow).toContainText('Administrador');
+  await expect(adminRow).toContainText('Gerenciado pelo ambiente');
+  await expect(adminRow.getByRole('button')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Novo usuário', exact: true }).click();
+  const editor = page.getByRole('dialog');
+  await editor.getByLabel('Nome', { exact: true }).fill('Leitor');
+  await editor.getByLabel('E-mail', { exact: true }).fill(userEmail);
+  await expect(editor.getByLabel('Senha', { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('create-user.png') });
+  await editor.getByRole('button', { name: 'Criar usuário', exact: true }).click();
+  const invitationLink = editor.getByLabel('Link do convite', { exact: true });
+  await expect(invitationLink).toHaveValue(/\/invite#[a-f0-9]{64}$/);
+  const invitationUrl = await invitationLink.inputValue();
+  await editor.getByRole('button', { name: 'Concluir', exact: true }).click();
+  const readerContext = await browser.newContext({ baseURL });
+  const reader = await readerContext.newPage();
+  await reader.goto(invitationUrl);
+  await expect(reader.getByLabel('Nome', { exact: true })).toHaveValue('Leitor');
+  await reader.getByLabel('Senha', { exact: true }).fill(userPassword);
+  await submitInvitation(reader);
+  await expect(reader.getByRole('heading', { name: 'Sua conta está pronta' })).toBeVisible();
+  await page.getByRole('button', { name: 'Atualizar usuários', exact: true }).click();
+  await expect(page.getByRole('cell', { name: `Leitor ${userEmail}`, exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('admin.png') });
+  await page.getByRole('button', { name: `Editar ${userEmail}`, exact: true }).click();
+  await expect(page.getByRole('dialog').getByLabel('Nova senha', { exact: false })).toHaveCount(0);
+  await page.getByRole('dialog').getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  reader.on('pageerror', error => errors.push(error.message));
+  await reader.goto('/login');
+  await reader.getByLabel('E-mail', { exact: true }).fill(userEmail);
+  await reader.getByLabel('Senha', { exact: true }).fill(userPassword);
+  await submitLogin(reader);
+  await expect(reader).toHaveURL(/\/docs$/);
+  await expect(reader.locator('#navigation .nav-link').first()).toBeVisible();
+  await expect(reader.locator('#example-language option')).toHaveCount(9);
+  await reader.locator('#example-language').selectOption('python');
+  await expect(reader.locator('#curl-example')).toContainText('import requests');
+  await expect(reader.getByRole('button', { name: 'Copiar Python · Requests', exact: true })).toBeVisible();
+  await reader.getByRole('tab', { name: 'API Explorer', exact: true }).click();
+  await expect(reader.locator('#connection-base-url')).toBeVisible();
+  await expect(reader.locator('#response-panel')).toBeHidden();
+  await reader.route('https://jsonplaceholder.typicode.com/**', route => route.abort('failed'));
+  await reader.getByRole('button', { name: /Enviar request/ }).click();
+  await expect(reader.locator('#response-meta')).toContainText('Sem resposta');
+  await expect(reader.locator('#response-network-error')).toBeVisible();
+  await expect(reader.locator('#response-result')).toBeHidden();
+  await expect(reader.locator('#response-network-error details')).not.toHaveAttribute('open');
+  await reader.locator('#response-network-error').scrollIntoViewIfNeeded();
+  await reader.screenshot({ path: testInfo.outputPath('request-network-error.png') });
+  await reader.getByText('Detalhes técnicos', { exact: true }).click();
+  await expect(reader.locator('#response-network-detail')).not.toBeEmpty();
+  await reader.unroute('https://jsonplaceholder.typicode.com/**');
+  await reader.route('https://jsonplaceholder.typicode.com/**', route => route.fulfill({ contentType: 'application/json', body: '{"id":42,"success":true}', status: 201 }));
+  await reader.getByRole('button', { name: /Enviar request/ }).click();
+  await expect(reader.locator('#response-panel')).toBeVisible();
+  await expect(reader.locator('#response-code')).toContainText('42');
+  await expect(reader.locator('#response-network-error')).toBeHidden();
+  await reader.unroute('https://jsonplaceholder.typicode.com/**');
+  await reader.route('https://jsonplaceholder.typicode.com/**', route => route.fulfill({ contentType: 'application/json', body: '{"error":"Servidor indisponível"}', status: 503 }));
+  await reader.getByRole('button', { name: /Enviar request/ }).click();
+  await expect(reader.locator('#response-meta')).toContainText('503');
+  await expect(reader.locator('#response-network-error')).toBeHidden();
+  await expect(reader.locator('#response-code')).toContainText('Servidor indisponível');
+  await reader.locator('#navigation .nav-link').first().click();
+  await expect(reader.locator('#response-panel')).toBeHidden();
+  await reader.screenshot({ path: testInfo.outputPath('documentation.png') });
+  await reader.locator('#navigation').getByRole('link', { name: 'Erros e respostas', exact: true }).click();
+  await expect(reader.locator('.text-guide').getByRole('table')).toBeVisible();
+  await reader.screenshot({ path: testInfo.outputPath('markdown-table-light.png'), animations: 'disabled' });
+  await reader.locator('#theme-toggle').click();
+  await expect(reader.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await reader.screenshot({ path: testInfo.outputPath('markdown-table-dark.png'), animations: 'disabled' });
+  await reader.setViewportSize({ width: 390, height: 844 });
+  expect(await reader.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await reader.screenshot({ path: testInfo.outputPath('markdown-table-mobile.png'), animations: 'disabled' });
+  await reader.setViewportSize({ width: 1440, height: 1000 });
+  await reader.locator('#theme-toggle').click();
+  await reader.goto('/admin');
+  await expect(reader).toHaveURL(/\/docs$/);
+  await expect(reader.getByRole('link', { name: 'Administrar usuários' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: `Desativar acesso de ${userEmail}`, exact: true }).click();
+  await expect(page.getByRole('button', { name: `Reativar acesso de ${userEmail}`, exact: true })).toBeVisible();
+  const protectedSpec = await reader.request.get('/docs-assets/sample-openapi.json');
+  expect(protectedSpec.status()).toBe(401);
+  await reader.reload();
+  await expect(reader).toHaveURL(/\/login$/);
+  await page.getByRole('button', { name: `Remover ${userEmail}`, exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remover usuário', exact: true }).click();
+  await expect(page.getByRole('cell', { name: `Leitor ${userEmail}`, exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Sair da conta', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await readerContext.close();
+  expect(errors).toEqual([]);
+});
+
+test('login fits mobile and theme preference persists', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Acesse a documentação' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Ativar tema escuro', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.screenshot({ path: testInfo.outputPath('login-mobile-dark.png') });
+});
+
+test('sidebar opens documentation settings and saved branding reaches documentation', async ({ page }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('E-mail', { exact: true }).fill(adminEmail);
+  await page.getByLabel('Senha', { exact: true }).fill(adminPassword);
+  await submitLogin(page);
+  await page.getByRole('navigation', { name: 'Administração', exact: true }).getByRole('link', { name: 'Customização', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Customização', exact: true })).toBeVisible();
+  const previous = (await (await page.request.get('/api/documentation/settings')).json()).settings;
+  await page.route('https://example.com/logo.png', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="blue"/></svg>' }));
+  try {
+    await page.getByLabel('Nome da documentação', { exact: true }).fill('Minha API');
+    await page.getByLabel('URL do logo', { exact: true }).fill('https://example.com/logo.png');
+    await expect(page.locator('input[type="color"]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Configurações salvas.');
+    await page.screenshot({ path: testInfo.outputPath('documentation-settings.png') });
+    await page.reload();
+    await expect(page.getByLabel('Nome da documentação', { exact: true })).toHaveValue('Minha API');
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('documentation-settings-mobile.png') });
+    await page.goto('/docs');
+    await expect(page.locator('.sidebar .brand')).not.toContainText('Minha API');
+    await expect(page.locator('.docs-custom-logo')).toHaveAttribute('src', 'https://example.com/logo.png');
+    await expect(page).toHaveTitle('Minha API — Documentação');
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--blue').trim())).toBe('#516fd6');
+    await expect(page.locator('.sidebar .brand > span')).toHaveCount(0);
+    await expect(page.locator('.docs-custom-logo')).toBeVisible();
+    await page.goto('/admin?section=customization');
+    await page.getByLabel('Nome da documentação', { exact: true }).fill('');
+    await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+    expect(await page.getByLabel('Nome da documentação', { exact: true }).evaluate((input: HTMLInputElement) => input.validity.valueMissing)).toBe(true);
+    await page.getByLabel('Nome da documentação', { exact: true }).fill('Minha API');
+    await page.getByLabel('URL do logo', { exact: true }).fill('');
+    await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Configurações salvas.');
+    await page.goto('/docs');
+    await expect(page).toHaveTitle('Minha API — Documentação');
+    await expect(page.locator('.sidebar .brand')).toBeHidden();
+  } finally {
+    await page.request.put('/api/admin/documentation/settings', { data: previous });
+  }
+});
+
+test('admin shares an invitation link and guest creates their own account once', async ({ page, browser, baseURL }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('E-mail', { exact: true }).fill(adminEmail);
+  await page.getByLabel('Senha', { exact: true }).fill(adminPassword);
+  await submitLogin(page);
+  await expect(page.getByRole('button', { name: 'Convidar usuário', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Novo usuário', exact: true }).click();
+  await page.getByRole('dialog').getByLabel('Nome', { exact: true }).fill('Pessoa convidada');
+  const email = 'invited@facet.test';
+  await page.getByRole('dialog').getByLabel('E-mail', { exact: true }).fill(email);
+  await expect(page.getByRole('dialog').getByLabel('Senha', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Criar usuário', exact: true }).click();
+  const link = page.getByLabel('Link do convite', { exact: true });
+  await expect(link).toHaveValue(/\/invite#[a-f0-9]{64}$/);
+  const firstUrl = await link.inputValue();
+  await page.getByRole('button', { name: 'Concluir', exact: true }).click();
+  const pending = page.getByRole('row').filter({ hasText: email });
+  await expect(page.getByRole('table')).toHaveCount(1);
+  await expect(pending).toContainText('Pessoa convidada');
+  await expect(pending).toContainText('Aguardando ativação');
+  await page.getByRole('button', { name: 'Aguardando ativação', exact: true }).click();
+  await expect(pending).toBeVisible();
+  await page.getByRole('button', { name: 'Ativos', exact: true }).click();
+  await expect(pending).toHaveCount(0);
+  await page.getByRole('button', { name: 'Todos', exact: true }).click();
+  await page.getByRole('searchbox').fill('Pessoa convidada');
+  await expect(pending).toBeVisible();
+  await page.getByRole('searchbox').fill('');
+  await page.screenshot({ path: testInfo.outputPath('users-pending-status.png') });
+  await page.getByRole('button', { name: 'Ativar tema escuro', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Novo usuário', exact: true })).toHaveCSS('background-color', 'rgb(242, 242, 242)');
+  await page.screenshot({ path: testInfo.outputPath('admin-dark.png'), animations: 'disabled' });
+  await page.getByRole('button', { name: 'Ativar tema claro', exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(pending.getByRole('button', { name: `Gerar novo link para ${email}`, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Novo usuário', exact: true })).toHaveCSS('background-color', 'rgb(21, 21, 21)');
+  await page.screenshot({ path: testInfo.outputPath('admin-mobile.png'), animations: 'disabled' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await pending.getByRole('button', { name: `Gerar novo link para ${email}`, exact: true }).click();
+  const regeneratedLink = page.getByRole('dialog').getByLabel('Link do convite', { exact: true });
+  await expect(regeneratedLink).toHaveValue(/\/invite#[a-f0-9]{64}$/);
+  const url = await regeneratedLink.inputValue();
+  expect(url).not.toBe(firstUrl);
+  await page.screenshot({ path: testInfo.outputPath('invitation-link.png') });
+  const context = await browser.newContext({ baseURL });
+  let createdId: string | undefined;
+  try {
+    const guest = await context.newPage();
+    await guest.goto(firstUrl);
+    await expect(guest.getByRole('alert')).toContainText('foi revogado');
+    await guest.goto(url);
+    await expect(guest.getByLabel('E-mail', { exact: true })).toHaveValue(email);
+    await expect(guest.getByLabel('Nome', { exact: true })).toHaveValue('Pessoa convidada');
+    await expect(guest.getByLabel('Nome', { exact: true })).toHaveAttribute('readonly', '');
+    await expect(guest.getByLabel('E-mail', { exact: true })).toHaveAttribute('readonly', '');
+    await guest.getByLabel('Senha', { exact: true }).fill(userPassword);
+    await guest.screenshot({ path: testInfo.outputPath('accept-invitation.png') });
+    await submitInvitation(guest);
+    await expect(guest.getByRole('heading', { name: 'Sua conta está pronta' })).toBeVisible();
+    const users = (await (await page.request.get('/api/admin/users')).json()).users;
+    createdId = users.find((item: { email: string }) => item.email === email)?.id;
+    await guest.getByRole('link', { name: 'Ir para o login' }).click();
+    await guest.getByLabel('E-mail', { exact: true }).fill(email);
+    await guest.getByLabel('Senha', { exact: true }).fill(userPassword);
+    await submitLogin(guest);
+    await expect(guest).toHaveURL(/\/docs$/);
+    await guest.goto(url);
+    await expect(guest.getByRole('alert')).toContainText('já foi utilizado');
+    await page.getByRole('button', { name: 'Concluir', exact: true }).click();
+    await page.getByRole('button', { name: 'Atualizar usuários', exact: true }).click();
+    await expect(page.getByRole('cell', { name: `Pessoa convidada ${email}`, exact: true })).toBeVisible();
+    await expect(pending).toContainText('Ativo');
+    await expect(pending).not.toContainText('Aguardando ativação');
+    await expect(pending).toHaveCount(1);
+  } finally {
+    if (createdId) await page.request.delete(`/api/admin/users/${createdId}`);
+    await context.close();
+  }
+});
+
+test('customization publishes an OpenAPI and Markdown menu pages with draft, ordering and deletion', async ({ page, browser, baseURL }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('E-mail', { exact: true }).fill(adminEmail);
+  await page.getByLabel('Senha', { exact: true }).fill(adminPassword);
+  await submitLogin(page);
+  await page.getByRole('navigation', { name: 'Administração', exact: true }).getByRole('link', { name: 'Customização', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Áreas de customização' }).getByRole('button', { name: 'OpenAPI', exact: true }).click();
+  const source = 'openapi: 3.0.3\ninfo:\n  title: CMS Test API\n  version: "2.0"\nservers:\n  - url: https://example.com\npaths:\n  /health:\n    get:\n      tags: [Health]\n      summary: Verificar saúde\n      responses:\n        "200":\n          description: OK\n';
+  await page.getByLabel('Arquivo OpenAPI').setInputFiles({ name: 'api.yaml', mimeType: 'text/yaml', buffer: Buffer.from(source) });
+  await expect(page.getByLabel('Ou cole o conteúdo')).toHaveValue(source);
+  await page.getByRole('button', { name: 'Publicar OpenAPI', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('OpenAPI publicado.');
+  await expect(page.locator('.cms-current-spec')).toContainText('CMS Test API');
+  await page.screenshot({ path: testInfo.outputPath('cms-openapi.png') });
+  const original = (await (await page.request.get('/api/admin/documentation/content')).json()).pages;
+  await page.getByRole('navigation', { name: 'Áreas de customização' }).getByRole('button', { name: 'Páginas e menu', exact: true }).click();
+  await page.getByRole('button', { name: 'Adicionar página', exact: true }).click();
+  await page.getByLabel('Título da página', { exact: true }).fill('Primeiros passos CMS');
+  await expect(page.getByLabel('Endereço da página', { exact: true })).toHaveValue('primeiros-passos-cms');
+  await page.getByLabel('Grupo no menu', { exact: true }).fill('Comece aqui');
+  const markdown = '## Bem-vindo\n\nConfigure sua **integração**.\n\n- Crie um token\n- Envie uma requisição\n\n| Código | Significado |\n| --- | --- |\n| 2xx | Requisição concluída |\n| 4xx | Verifique credenciais e permissões |\n\n> Guarde suas credenciais em um local seguro.\n\n```json\n{"ok": true}\n```\n\n<script>window.cmsUnsafe = true</script>\n\n[link inseguro](javascript:alert(1))';
+  await page.getByRole('textbox', { name: 'Conteúdo em Markdown', exact: true }).fill(markdown);
+  await page.getByRole('button', { name: 'Prévia', exact: true }).click();
+  const preview = page.getByRole('region', { name: 'Prévia da página' });
+  await expect(preview.locator('strong')).toContainText('integração');
+  await expect(preview.locator('script')).toHaveCount(0);
+  await expect(preview.locator('a[href^="javascript:"]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Salvar páginas', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Páginas salvas.');
+  const context = await browser.newContext({ baseURL });
+  try {
+    const create = await page.request.post('/api/admin/users', { data: { name: 'Leitor CMS', email: 'cms-reader@facet.test' } });
+    const { path } = await create.json();
+    const guest = await context.newPage();
+    await guest.goto(new URL(path, baseURL).href);
+    await guest.getByLabel('Senha', { exact: true }).fill(userPassword);
+    await submitInvitation(guest);
+    await guest.getByRole('link', { name: 'Ir para o login', exact: true }).click();
+    await guest.getByLabel('E-mail', { exact: true }).fill('cms-reader@facet.test');
+    await guest.getByLabel('Senha', { exact: true }).fill(userPassword);
+    await submitLogin(guest);
+    await expect(guest.locator('#navigation .nav-link')).toContainText('Verificar saúde');
+    await expect(guest.locator('#response-example')).toContainText('Nenhum exemplo de resposta definido');
+    await expect(guest.locator('#navigation').getByRole('link', { name: 'Primeiros passos CMS', exact: true })).toHaveCount(0);
+    await page.getByLabel('Exibir na documentação', { exact: true }).check();
+    const up = page.getByRole('button', { name: 'Mover Primeiros passos CMS para cima', exact: true });
+    for (let index = 0; index < 4; index++) await up.click();
+    await page.getByRole('button', { name: 'Salvar páginas', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Páginas salvas.');
+    await page.screenshot({ path: testInfo.outputPath('cms-pages.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('cms-pages-mobile.png') });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.reload();
+    await page.getByRole('navigation', { name: 'Áreas de customização' }).getByRole('button', { name: 'Páginas e menu', exact: true }).click();
+    await page.getByRole('button', { name: 'Primeiros passos CMS Comece aqui · Publicada', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Conteúdo em Markdown', exact: true })).toHaveValue(markdown);
+    await guest.reload();
+    await expect(guest.locator('#navigation .nav-guide').first()).toHaveText('Primeiros passos CMS');
+    await guest.locator('#navigation').getByRole('link', { name: 'Primeiros passos CMS', exact: true }).click();
+    await expect(guest.locator('.text-guide h1')).toHaveText('Primeiros passos CMS');
+    await expect(guest.locator('#console')).toBeHidden();
+    await expect(guest.locator('.text-guide strong')).toHaveText('integração');
+    await expect(guest.locator('.text-guide script')).toHaveCount(0);
+    expect(await guest.evaluate(() => 'cmsUnsafe' in window)).toBe(false);
+    await guest.reload();
+    await expect(guest.locator('.text-guide h1')).toHaveText('Primeiros passos CMS');
+    await expect(guest.locator('#console')).toBeHidden();
+    await guest.screenshot({ path: testInfo.outputPath('cms-published-page.png') });
+    await page.getByRole('button', { name: 'Excluir página', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Excluir página', exact: true }).click();
+    await page.getByRole('button', { name: 'Salvar páginas', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Páginas salvas.');
+    await guest.reload();
+    await expect(guest.locator('#navigation').getByRole('link', { name: 'Primeiros passos CMS', exact: true })).toHaveCount(0);
+  } finally {
+    const content = (await (await page.request.get('/api/admin/documentation/content')).json());
+    await page.request.put('/api/admin/documentation/pages', { data: { pages: original, revision: content.revision } });
+    await context.close();
+  }
+});
+
+test('schema views open from the menu, resolve references, search and survive reload', async ({ page }, testInfo) => {
+  await page.goto('/login');
+  await page.getByLabel('E-mail', { exact: true }).fill(adminEmail);
+  await page.getByLabel('Senha', { exact: true }).fill(adminPassword);
+  await submitLogin(page);
+  await expect(page).toHaveURL(/\/admin$/);
+  const unusualName = 'Page/User <test>';
+  const spec = {
+    openapi: '3.1.0', info: { title: 'Schemas API', version: '1.0' },
+    paths: { '/users': { get: { summary: 'Listar usuários', responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/User' } } } } } } } },
+    components: { schemas: {
+      User: { type: 'object', description: 'Dados de um **usuário**.', required: ['id', 'email'], properties: {
+        id: { type: 'integer', description: 'Identificador do usuário.', minimum: 1 }, email: { type: 'string', format: 'email', example: 'pessoa@example.com' },
+        status: { type: 'string', enum: ['active', 'inactive'], default: 'active' }, address: { $ref: '#/components/schemas/Address' },
+        manager: { $ref: '#/components/schemas/User' }, tags: { type: 'array', items: { type: 'string' } },
+        items: { type: 'array', items: { type: 'object', required: ['id', 'name'], properties: { id: { type: 'string', example: 'track_001' }, name: { type: 'string', example: 'Noite Neon' }, durationMs: { type: 'integer', example: 214000 }, explicit: { type: 'boolean', example: false } } } },
+      } },
+      Address: { type: 'object', required: ['city'], properties: { city: { type: 'string', example: 'São Paulo' } } },
+      Alias: { $ref: '#/components/schemas/User' },
+      AdminUser: { allOf: [{ $ref: '#/components/schemas/User' }, { type: 'object', properties: { admin: { type: 'boolean' } } }] },
+      UserList: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+      [unusualName]: { type: 'string', enum: ['draft', 'published'] },
+      Nothing: false,
+    } },
+  };
+  const imported = await page.request.put('/api/admin/documentation/openapi', { data: { source: JSON.stringify(spec), sourceName: 'schemas.json' } });
+  expect(imported.status()).toBe(200);
+  await page.goto('/docs');
+  await page.locator('.nav-schemas > summary').click();
+  await page.locator('.nav-schema-items').getByRole('link', { name: 'User', exact: true }).click();
+  await expect(page.locator('.schema-page h1')).toHaveText('User');
+  await expect(page.locator('#console')).toBeHidden();
+  await expect(page.locator('.nav-schema-link.is-active')).toHaveText('User');
+  await expect(page.locator('.schema-page-description strong')).toHaveText('usuário');
+  await expect(page.getByRole('region', { name: 'Propriedades do schema' })).toContainText('Identificador do usuário.');
+  await expect(page.locator('.schema-page-example')).toContainText('pessoa@example.com');
+  await expect(page.locator('.schema-page-properties > .schema-fields > .schema-field > .schema-field__meta > .field-required')).toHaveCount(2);
+  await page.screenshot({ path: testInfo.outputPath('schema-properties.png') });
+  const nestedItems = page.locator('.schema-page-properties > .schema-fields > .schema-field').filter({ has: page.locator('.schema-field__meta > strong', { hasText: /^items$/ }) }).locator('details').first();
+  await nestedItems.locator('summary').first().click();
+  await expect(nestedItems.locator('.schema-fields')).toBeVisible();
+  await nestedItems.screenshot({ path: testInfo.outputPath('schema-expanded-items.png') });
+  await page.getByRole('tab', { name: 'JSON', exact: true }).click();
+  await expect(page.getByRole('tabpanel', { name: 'JSON', exact: true })).toContainText('"required"');
+  await expect(page.getByRole('tabpanel', { name: 'Propriedades', exact: true })).toBeHidden();
+  await page.getByRole('tab', { name: 'JSON', exact: true }).press('ArrowLeft');
+  await expect(page.getByRole('tab', { name: 'Propriedades', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('region', { name: 'Propriedades do schema' }).getByRole('link', { name: 'Address', exact: true }).first().click();
+  await expect(page.locator('.schema-page h1')).toHaveText('Address');
+  await expect(page.locator('.schema-page-properties')).toContainText('city');
+  await page.reload();
+  await expect(page.locator('.schema-page h1')).toHaveText('Address');
+  await page.locator('.nav-schema-items').getByRole('link', { name: 'Alias', exact: true }).click();
+  await expect(page.locator('.schema-page-properties')).toContainText('Identificador do usuário.');
+  await page.locator('.schema-page-properties .schema-nested').filter({ has: page.locator('summary', { hasText: 'Propriedades do objeto' }) }).last().locator('summary').first().click();
+  await expect(page.locator('.schema-reference')).toContainText('Referência recursiva');
+  await page.locator('.nav-schema-items').getByRole('link', { name: 'UserList', exact: true }).click();
+  await expect(page.locator('.schema-page-meta')).toContainText('object[]');
+  await page.locator('.nav-schema-items').getByRole('link', { name: 'AdminUser', exact: true }).click();
+  await expect(page.locator('.schema-page-properties summary')).toContainText(['allOf', 'allOf']);
+  await page.locator('.nav-schema-items').getByRole('link', { name: 'Nothing', exact: true }).click();
+  await expect(page.locator('.schema-page-properties')).toContainText('não aceita nenhum valor');
+  await page.locator('#sidebar-search').click();
+  await page.getByRole('dialog').getByRole('searchbox').fill('Page/User');
+  await page.getByRole('dialog').getByRole('button', { name: `${unusualName} Schema`, exact: true }).click();
+  await expect(page.locator('.schema-page h1')).toHaveText(unusualName);
+  await expect(page.locator('.schema-page h1 test')).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('.schema-page h1')).toHaveText(unusualName);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('schema-mobile.png'), animations: 'disabled' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.locator('.nav-link').first().click();
+  await expect(page.locator('#console')).toBeVisible();
+  await expect(page.locator('.nav-schema-link.is-active')).toHaveCount(0);
+  await page.goto('/docs#schema-Missing');
+  await expect(page.locator('.schema-page h1')).toHaveText('Schema não encontrado');
+});
