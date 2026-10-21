@@ -1,0 +1,41 @@
+name: facet
+
+services:
+  postgres:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB no ambiente}
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no ambiente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no ambiente}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Local Compose uses the compiled app over HTTP. The image defaults to production.
+      NODE_ENV: ${NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: "4173"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Defina ADMIN_EMAIL no ambiente}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no ambiente}
+      DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL apontando para postgres:5432}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?Defina MFA_ENCRYPTION_KEY no arquivo .env}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    ports:
+      - "127.0.0.1:${PORT:-4173}:4173"
+
+volumes:
+  postgres_data:
